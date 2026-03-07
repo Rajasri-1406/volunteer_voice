@@ -34,6 +34,7 @@ export default function ResultsScreen({ pollId, navigate, role }) {
       .then(setPoll)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pollId]);
 
   const handleClose = async () => {
@@ -89,7 +90,6 @@ export default function ResultsScreen({ pollId, navigate, role }) {
   }));
 
   const status = STATUS_COLORS[poll.status];
-  const deadline = poll.deadline ? new Date(poll.deadline) : null;
   const createdAt = new Date(poll.createdAt);
 
   // Vote log grouped by date

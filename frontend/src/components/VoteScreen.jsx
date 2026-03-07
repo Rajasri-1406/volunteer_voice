@@ -24,6 +24,7 @@ export default function VoteScreen({ pollId, navigate, role }) {
       .then(setPoll)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pollId]);
 
   const handleVote = async () => {

@@ -5,8 +5,6 @@ import { TAG_COLORS, STATUS_COLORS, POLL_TYPE_LABELS } from "../data/polls";
 function PollCard({ poll, role, onVote, onResults, onDelete, onClose }) {
   const status = STATUS_COLORS[poll.status];
   const topOption = poll.options.reduce((a, b) => (a.votes > b.votes ? a : b), poll.options[0]);
-  const tagColor = TAG_COLORS[topOption?.tag] || TAG_COLORS.Other;
-
   const deadline = poll.deadline ? new Date(poll.deadline) : null;
   const isExpired = deadline && deadline < new Date();
   const daysLeft = deadline
