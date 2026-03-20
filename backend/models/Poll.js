@@ -22,6 +22,7 @@ const PollSchema = new mongoose.Schema(
     description: { type: String, trim: true },
     organizerName: { type: String, required: true, trim: true },
     organizerEmail: { type: String, trim: true },
+    organizerPhone: { type: String, trim: true },
     pollType: {
       type: String,
       enum: ["activity", "date", "location", "general"],

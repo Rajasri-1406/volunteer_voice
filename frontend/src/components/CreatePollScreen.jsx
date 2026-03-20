@@ -2,37 +2,12 @@ import { useState } from "react";
 import { createPoll } from "../api";
 import { TAG_OPTIONS } from "../data/polls";
 
-const POLL_TYPES = [
-  { value: "activity", label: "🌿 Activity Choice" },
-  { value: "date", label: "📅 Date / Time" },
-  { value: "location", label: "📍 Location" },
-  { value: "general", label: "💬 General" },
+const QUICK_OPTIONS = [
+  { label: "Tree Planting", tag: "Environment" },
+  { label: "Food Donation Drive", tag: "Food" },
+  { label: "Community Clean-up", tag: "Community" },
+  { label: "Health Camp", tag: "Health" },
 ];
-
-const QUICK_OPTIONS = {
-  activity: [
-    { label: "Tree Planting", tag: "Environment" },
-    { label: "Food Donation Drive", tag: "Food" },
-    { label: "Community Clean-up", tag: "Community" },
-    { label: "Health Camp", tag: "Health" },
-  ],
-  date: [
-    { label: "This Saturday Morning", tag: "Other" },
-    { label: "This Sunday Morning", tag: "Other" },
-    { label: "Next Weekday Evening", tag: "Other" },
-    { label: "Next Weekend", tag: "Other" },
-  ],
-  location: [
-    { label: "City Park", tag: "Environment" },
-    { label: "Community Hall", tag: "Community" },
-    { label: "Local School Ground", tag: "Community" },
-    { label: "Beach / Riverside", tag: "Environment" },
-  ],
-  general: [
-    { label: "Option A", tag: "Other" },
-    { label: "Option B", tag: "Other" },
-  ],
-};
 
 export default function CreatePollScreen({ navigate }) {
   const [form, setForm] = useState({
@@ -40,6 +15,7 @@ export default function CreatePollScreen({ navigate }) {
     description: "",
     organizerName: "",
     organizerEmail: "",
+    organizerPhone: "",
     pollType: "activity",
     deadline: "",
   });
@@ -63,7 +39,7 @@ export default function CreatePollScreen({ navigate }) {
     setOptions((o) => o.map((opt, idx) => (idx === i ? { ...opt, [key]: val } : opt)));
 
   const loadQuickOptions = () => {
-    setOptions(QUICK_OPTIONS[form.pollType].map((o) => ({ ...o })));
+    setOptions(QUICK_OPTIONS.map((o) => ({ ...o })));
   };
 
   const canGoStep2 =
@@ -162,7 +138,19 @@ export default function CreatePollScreen({ navigate }) {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-bark-700 mb-1.5">
-                    Your Email (optional)
+                    Phone Number (optional)
+                  </label>
+                  <input
+                    type="tel"
+                    className="input-field"
+                    placeholder="+91 98765 43210"
+                    value={form.organizerPhone}
+                    onChange={(e) => setField("organizerPhone", e.target.value)}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-semibold text-bark-700 mb-1.5">
+                    Email (optional)
                   </label>
                   <input
                     type="email"
@@ -171,27 +159,6 @@ export default function CreatePollScreen({ navigate }) {
                     value={form.organizerEmail}
                     onChange={(e) => setField("organizerEmail", e.target.value)}
                   />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-bark-700 mb-2">
-                  Poll Type
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {POLL_TYPES.map((pt) => (
-                    <button
-                      key={pt.value}
-                      onClick={() => setField("pollType", pt.value)}
-                      className={`py-3 px-4 rounded-xl text-sm font-semibold text-left transition-all duration-200 border ${
-                        form.pollType === pt.value
-                          ? "bg-forest-600 text-white border-forest-600 shadow-sm"
-                          : "bg-white text-bark-700 border-bark-200 hover:border-forest-300"
-                      }`}
-                    >
-                      {pt.label}
-                    </button>
-                  ))}
                 </div>
               </div>
 
@@ -308,13 +275,15 @@ export default function CreatePollScreen({ navigate }) {
                 <div className="bg-bark-50 rounded-xl p-3">
                   <p className="text-xs text-bark-500 font-semibold uppercase tracking-wide mb-1">Organizer</p>
                   <p className="text-bark-800 font-semibold text-sm">{form.organizerName}</p>
+                  {form.organizerPhone && (
+                    <p className="text-bark-500 text-xs">{form.organizerPhone}</p>
+                  )}
                   {form.organizerEmail && (
                     <p className="text-bark-500 text-xs">{form.organizerEmail}</p>
                   )}
                 </div>
                 <div className="bg-bark-50 rounded-xl p-3">
-                  <p className="text-xs text-bark-500 font-semibold uppercase tracking-wide mb-1">Type / Deadline</p>
-                  <p className="text-bark-800 font-semibold text-sm capitalize">{form.pollType}</p>
+                  <p className="text-xs text-bark-500 font-semibold uppercase tracking-wide mb-1">Deadline</p>
                   <p className="text-bark-500 text-xs">
                     {form.deadline
                       ? new Date(form.deadline).toLocaleString()

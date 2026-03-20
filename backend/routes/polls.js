@@ -6,7 +6,7 @@ const Poll = require("../models/Poll");
 // POST /api/polls
 router.post("/", async (req, res) => {
   try {
-    const { title, description, organizerName, organizerEmail, pollType, options, deadline } = req.body;
+    const { title, description, organizerName, organizerEmail, organizerPhone, pollType, options, deadline } = req.body;
 
     if (!title || !organizerName || !options || options.length < 2) {
       return res.status(400).json({ error: "Title, organizer name, and at least 2 options are required." });
@@ -17,6 +17,7 @@ router.post("/", async (req, res) => {
       description,
       organizerName,
       organizerEmail,
+      organizerPhone,
       pollType: pollType || "activity",
       options: options.map((opt) => ({
         label: opt.label,
