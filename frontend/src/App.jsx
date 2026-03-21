@@ -20,7 +20,7 @@ function LandingScreen({ onSelectRole }) {
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-3">
           <div className="w-14 h-14 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center">
-            <span className="text-3xl">🌱</span>
+            <span className="text-3xl">🤝</span>
           </div>
         </div>
         <h1 className="text-4xl md:text-5xl font-display font-bold text-white mb-2 tracking-tight">
@@ -62,7 +62,7 @@ function LandingScreen({ onSelectRole }) {
         </div>
 
         <p className="text-forest-400 text-xs mt-8 font-body">
-          Made for NGO communities 🤝
+          Made for NGO communities 
         </p>
       </div>
     </div>
@@ -92,7 +92,7 @@ export default function App() {
             onClick={() => navigate("home")}
             className="flex items-center gap-2 font-display font-bold text-forest-700 text-lg hover:text-forest-900 transition-colors"
           >
-            <span className="text-2xl">🌱</span>
+            <span className="text-2xl">🤝</span>
             <span className="hidden sm:inline">VolunteerPoll</span>
           </button>
 

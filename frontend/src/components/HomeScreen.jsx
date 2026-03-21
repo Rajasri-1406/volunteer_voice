@@ -231,7 +231,7 @@ export default function HomeScreen({ role, navigate }) {
       {/* Poll list */}
       {loading ? (
         <div className="text-center py-16">
-          <div className="text-5xl mb-4 animate-bounce">🌱</div>
+          <div className="text-5xl mb-4 animate-bounce">🤝</div>
           <p className="text-bark-500 font-body">Loading polls...</p>
         </div>
       ) : error ? (
