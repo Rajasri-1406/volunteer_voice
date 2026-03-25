@@ -16,6 +16,12 @@ const OptionSchema = new mongoose.Schema({
   votes: { type: Number, default: 0 },
 });
 
+const CommentSchema = new mongoose.Schema({
+  commenterName: { type: String, required: true, trim: true },
+  text: { type: String, required: true, trim: true },
+  commentedAt: { type: Date, default: Date.now },
+});
+
 const PollSchema = new mongoose.Schema(
   {
     title: { type: String, required: true, trim: true },
@@ -33,6 +39,7 @@ const PollSchema = new mongoose.Schema(
     status: { type: String, enum: ["active", "closed"], default: "active" },
     totalVotes: { type: Number, default: 0 },
     voteLog: { type: [VoteSchema], default: [] },
+    comments: { type: [CommentSchema], default: [] },
   },
   { timestamps: true }
 );
