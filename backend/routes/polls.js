@@ -5,7 +5,10 @@ const Poll = require("../models/Poll");
 // ─── CREATE a new poll ─────────────────────────────────────────────────────
 router.post("/", async (req, res) => {
   try {
-    const { title, description, organizerName, organizerEmail, organizerPhone, pollType, options, deadline } = req.body;
+    const {
+      title, description, organizerName, organizerEmail, organizerPhone,
+      pollType, options, deadline, voterFields,
+    } = req.body;
 
     if (!title || !organizerName || !options || options.length < 2) {
       return res.status(400).json({ error: "Title, organizer name, and at least 2 options are required." });
@@ -24,6 +27,10 @@ router.post("/", async (req, res) => {
         votes: 0,
       })),
       deadline: deadline ? new Date(deadline) : null,
+      // default to ["name","phone"] if organizer didn't customise
+      voterFields: Array.isArray(voterFields) && voterFields.length > 0
+        ? voterFields
+        : ["name", "phone"],
     });
 
     await poll.save();
@@ -68,7 +75,7 @@ router.get("/:id", async (req, res) => {
 // ─── VOTE on a poll ────────────────────────────────────────────────────────
 router.post("/:id/vote", async (req, res) => {
   try {
-    const { optionIndex, voterName } = req.body;
+    const { optionIndex, voterName, voterPhone, voterDob, voterEmail } = req.body;
     const poll = await Poll.findById(req.params.id);
 
     if (!poll) return res.status(404).json({ error: "Poll not found." });
@@ -81,6 +88,9 @@ router.post("/:id/vote", async (req, res) => {
     poll.totalVotes += 1;
     poll.voteLog.push({
       voterName: voterName || "Anonymous",
+      voterPhone: voterPhone || "",
+      voterDob: voterDob || "",
+      voterEmail: voterEmail || "",
       optionIndex,
       votedAt: new Date(),
     });
@@ -105,7 +115,6 @@ router.patch("/:id/close", async (req, res) => {
 });
 
 // ─── EDIT a poll (title, description, options — votes untouched) ───────────
-// PATCH /api/polls/:id/edit
 router.patch("/:id/edit", async (req, res) => {
   try {
     const { title, description, options } = req.body;
@@ -116,13 +125,12 @@ router.patch("/:id/edit", async (req, res) => {
     if (description !== undefined) poll.description = description.trim();
 
     if (options && options.length >= 2) {
-      // Merge edited options — preserve existing votes by index, add new ones with 0
       const updatedOptions = options.map((opt, i) => {
         const existing = poll.options[i];
         return {
           label: opt.label,
           tag: opt.tag || "Other",
-          votes: existing ? existing.votes : 0, // keep old votes
+          votes: existing ? existing.votes : 0,
         };
       });
       poll.options = updatedOptions;
@@ -137,7 +145,6 @@ router.patch("/:id/edit", async (req, res) => {
 });
 
 // ─── DUPLICATE a poll ──────────────────────────────────────────────────────
-// POST /api/polls/:id/duplicate
 router.post("/:id/duplicate", async (req, res) => {
   try {
     const original = await Poll.findById(req.params.id);
@@ -160,6 +167,7 @@ router.post("/:id/duplicate", async (req, res) => {
       totalVotes: 0,
       voteLog: [],
       comments: [],
+      voterFields: original.voterFields || ["name", "phone"],
     });
 
     await copy.save();
@@ -171,7 +179,6 @@ router.post("/:id/duplicate", async (req, res) => {
 });
 
 // ─── ADD a comment to a poll ───────────────────────────────────────────────
-// POST /api/polls/:id/comment
 router.post("/:id/comment", async (req, res) => {
   try {
     const { commenterName, text } = req.body;

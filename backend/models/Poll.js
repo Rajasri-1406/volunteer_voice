@@ -2,6 +2,9 @@ const mongoose = require("mongoose");
 
 const VoteSchema = new mongoose.Schema({
   voterName: { type: String, default: "Anonymous" },
+  voterPhone: { type: String, default: "" },
+  voterDob: { type: String, default: "" },
+  voterEmail: { type: String, default: "" },
   optionIndex: { type: Number, required: true },
   votedAt: { type: Date, default: Date.now },
 });
@@ -40,6 +43,14 @@ const PollSchema = new mongoose.Schema(
     totalVotes: { type: Number, default: 0 },
     voteLog: { type: [VoteSchema], default: [] },
     comments: { type: [CommentSchema], default: [] },
+    // voterFields: array of field keys organizer wants to collect
+    // e.g. ["name", "phone", "dob", "email"]
+    // if empty/not set → default behaviour (name + phone optional)
+    voterFields: {
+      type: [String],
+      enum: ["name", "phone", "dob", "email"],
+      default: ["name", "phone"],
+    },
   },
   { timestamps: true }
 );
