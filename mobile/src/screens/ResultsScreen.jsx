@@ -4,11 +4,22 @@ import {
   ScrollView, ActivityIndicator, Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { BarChart } from "react-native-chart-kit";
+import { BarChart, PieChart } from "react-native-chart-kit";
 import { getPollById, closePoll } from "../api";
 import { COLORS, TAG_COLORS } from "../constants/colors";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
+
+const PIE_COLORS = [
+  "#16a34a",
+  "#f97316",
+  "#3b82f6",
+  "#ec4899",
+  "#f59e0b",
+  "#8b5cf6",
+  "#ef4444",
+  "#14b8a6",
+];
 
 export default function ResultsScreen({ navigation, route }) {
   const { pollId, role } = route.params;
@@ -17,6 +28,7 @@ export default function ResultsScreen({ navigation, route }) {
   const [error, setError] = useState("");
   const [showLog, setShowLog] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [chartType, setChartType] = useState("bar");
 
   useEffect(() => {
     getPollById(pollId)
@@ -60,6 +72,7 @@ export default function ResultsScreen({ navigation, route }) {
   }
 
   const total = poll.totalVotes;
+
   const sortedOptions = [...poll.options]
     .map((opt, i) => ({
       ...opt,
@@ -72,13 +85,22 @@ export default function ResultsScreen({ navigation, route }) {
   const winnerColor = TAG_COLORS[winner?.tag] || TAG_COLORS.Other;
   const voteLog = poll.voteLog || [];
 
-  // Chart data
-  const chartData = {
+  // Bar chart data
+  const barData = {
     labels: poll.options.map((o) =>
       o.label.length > 8 ? o.label.slice(0, 7) + "…" : o.label
     ),
     datasets: [{ data: poll.options.map((o) => o.votes || 0) }],
   };
+
+  // Pie chart data with distinct colors
+  const pieData = poll.options.map((opt, idx) => ({
+    name: opt.label.length > 10 ? opt.label.slice(0, 9) + "…" : opt.label,
+    votes: opt.votes || 0,
+    color: PIE_COLORS[idx % PIE_COLORS.length],
+    legendFontColor: COLORS.textMid,
+    legendFontSize: 11,
+  }));
 
   return (
     <SafeAreaView style={styles.container}>
@@ -114,7 +136,13 @@ export default function ResultsScreen({ navigation, route }) {
           {[
             { label: "Total Votes", value: total, emoji: "🗳️" },
             { label: "Options", value: poll.options.length, emoji: "📋" },
-            { label: "Created", value: new Date(poll.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" }), emoji: "📅" },
+            {
+              label: "Created",
+              value: new Date(poll.createdAt).toLocaleDateString("en-IN", {
+                day: "numeric", month: "short",
+              }),
+              emoji: "📅",
+            },
           ].map((s) => (
             <View key={s.label} style={styles.statCard}>
               <Text style={styles.statEmoji}>{s.emoji}</Text>
@@ -140,28 +168,74 @@ export default function ResultsScreen({ navigation, route }) {
           </View>
         )}
 
-        {/* Bar Chart */}
+        {/* Chart with toggle */}
         {total > 0 && (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Vote Distribution</Text>
-            <BarChart
-              data={chartData}
-              width={SCREEN_WIDTH - 64}
-              height={200}
-              fromZero
-              showValuesOnTopOfBars
-              chartConfig={{
-                backgroundColor: COLORS.white,
-                backgroundGradientFrom: COLORS.white,
-                backgroundGradientTo: COLORS.white,
-                decimalPlaces: 0,
-                color: () => COLORS.primary,
-                labelColor: () => COLORS.textMid,
-                style: { borderRadius: 12 },
-                barPercentage: 0.6,
-              }}
-              style={{ borderRadius: 12, marginTop: 8 }}
-            />
+            <View style={styles.chartToggleRow}>
+              <Text style={styles.cardTitle}>Vote Distribution</Text>
+              <View style={styles.toggleBtns}>
+                {["bar", "pie"].map((t) => (
+                  <TouchableOpacity
+                    key={t}
+                    style={[styles.toggleBtn, chartType === t && styles.toggleBtnActive]}
+                    onPress={() => setChartType(t)}
+                  >
+                    <Text style={[styles.toggleBtnText, chartType === t && styles.toggleBtnTextActive]}>
+                      {t === "bar" ? "📊 Bar" : "🥧 Pie"}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {chartType === "bar" ? (
+              <BarChart
+                data={barData}
+                width={SCREEN_WIDTH - 64}
+                height={200}
+                fromZero
+                showValuesOnTopOfBars
+                chartConfig={{
+                  backgroundColor: COLORS.white,
+                  backgroundGradientFrom: COLORS.white,
+                  backgroundGradientTo: COLORS.white,
+                  decimalPlaces: 0,
+                  color: () => COLORS.primary,
+                  labelColor: () => COLORS.textMid,
+                  barPercentage: 0.6,
+                }}
+                style={{ borderRadius: 12, marginTop: 8 }}
+              />
+            ) : (
+              <PieChart
+                data={pieData}
+                width={SCREEN_WIDTH - 64}
+                height={220}
+                chartConfig={{
+                  color: () => COLORS.primary,
+                  labelColor: () => COLORS.textMid,
+                }}
+                accessor="votes"
+                backgroundColor="transparent"
+                paddingLeft="15"
+                absolute
+                style={{ marginTop: 8 }}
+              />
+            )}
+
+            {/* Color legend for pie chart */}
+            {chartType === "pie" && (
+              <View style={styles.legendContainer}>
+                {poll.options.map((opt, idx) => (
+                  <View key={idx} style={styles.legendItem}>
+                    <View style={[styles.legendDot, { backgroundColor: PIE_COLORS[idx % PIE_COLORS.length] }]} />
+                    <Text style={styles.legendText} numberOfLines={1}>
+                      {opt.label} ({opt.votes})
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         )}
 
@@ -191,10 +265,7 @@ export default function ResultsScreen({ navigation, route }) {
 
         {/* Vote Log */}
         <View style={styles.card}>
-          <TouchableOpacity
-            style={styles.logToggle}
-            onPress={() => setShowLog((v) => !v)}
-          >
+          <TouchableOpacity style={styles.logToggle} onPress={() => setShowLog((v) => !v)}>
             <Text style={styles.cardTitle}>🧾 Vote Log ({voteLog.length})</Text>
             <Text style={styles.toggleText}>{showLog ? "▲ Hide" : "▼ Show"}</Text>
           </TouchableOpacity>
@@ -267,6 +338,7 @@ export default function ResultsScreen({ navigation, route }) {
             </TouchableOpacity>
           )}
         </View>
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -275,50 +347,40 @@ export default function ResultsScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 20 },
-  topBar: {
-    flexDirection: "row", alignItems: "center",
-    paddingHorizontal: 16, paddingVertical: 14,
-  },
-  backBtn: {
-    width: 40, height: 40, borderRadius: 12, backgroundColor: COLORS.card,
-    borderWidth: 1, borderColor: COLORS.border, alignItems: "center", justifyContent: "center",
-  },
+  topBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 14 },
+  backBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, alignItems: "center", justifyContent: "center" },
   backText: { fontSize: 18, color: COLORS.textDark },
   screenTitle: { fontSize: 17, fontWeight: "800", color: COLORS.textDark },
   statusRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 3 },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
   statusText: { fontSize: 10, fontWeight: "700" },
   metaText: { fontSize: 11, color: COLORS.textLight },
-  closeBtn: {
-    backgroundColor: "#fef3c7", paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 10, marginLeft: 8,
-  },
+  closeBtn: { backgroundColor: "#fef3c7", paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, marginLeft: 8 },
   closeBtnText: { color: "#92400e", fontSize: 12, fontWeight: "700" },
   scroll: { padding: 16, gap: 14, paddingBottom: 40 },
   statsRow: { flexDirection: "row", gap: 10 },
-  statCard: {
-    flex: 1, backgroundColor: COLORS.card, borderRadius: 14, padding: 12,
-    alignItems: "center", borderWidth: 1, borderColor: COLORS.border,
-  },
+  statCard: { flex: 1, backgroundColor: COLORS.card, borderRadius: 14, padding: 12, alignItems: "center", borderWidth: 1, borderColor: COLORS.border },
   statEmoji: { fontSize: 18, marginBottom: 2 },
   statValue: { fontSize: 18, fontWeight: "800", color: COLORS.textDark },
   statLabel: { fontSize: 10, color: COLORS.textMid },
-  card: {
-    backgroundColor: COLORS.card, borderRadius: 18, padding: 16,
-    borderWidth: 1, borderColor: COLORS.border,
-  },
-  cardTitle: { fontSize: 16, fontWeight: "800", color: COLORS.textDark, marginBottom: 4 },
+  card: { backgroundColor: COLORS.card, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: COLORS.border },
+  cardTitle: { fontSize: 16, fontWeight: "800", color: COLORS.textDark },
+  chartToggleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
+  toggleBtns: { flexDirection: "row", gap: 6 },
+  toggleBtn: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, backgroundColor: "#f5f5f4" },
+  toggleBtnActive: { backgroundColor: COLORS.primary },
+  toggleBtnText: { fontSize: 11, fontWeight: "600", color: COLORS.textMid },
+  toggleBtnTextActive: { color: COLORS.white },
+  legendContainer: { marginTop: 12, gap: 6 },
+  legendItem: { flexDirection: "row", alignItems: "center", gap: 8 },
+  legendDot: { width: 12, height: 12, borderRadius: 6 },
+  legendText: { fontSize: 12, color: COLORS.textMid, flex: 1 },
   winnerRow: { flexDirection: "row", alignItems: "center" },
   winnerLabel: { fontSize: 11, color: COLORS.textLight, fontWeight: "600", letterSpacing: 0.5 },
   winnerTitle: { fontSize: 20, fontWeight: "800", color: COLORS.textDark, marginTop: 2 },
   winnerSub: { fontSize: 13, fontWeight: "700", marginTop: 2 },
-  optionRow: {
-    flexDirection: "row", alignItems: "center", gap: 8,
-    paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: COLORS.border,
-  },
-  rankBadge: {
-    width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center",
-  },
+  optionRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  rankBadge: { width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center" },
   rankText: { fontSize: 11, fontWeight: "800" },
   tagPill: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 8 },
   tagPillText: { fontSize: 10, fontWeight: "700" },
@@ -326,14 +388,8 @@ const styles = StyleSheet.create({
   optionStat: { fontSize: 12, color: COLORS.textMid, fontWeight: "600" },
   logToggle: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   toggleText: { fontSize: 12, color: COLORS.textMid },
-  logRow: {
-    flexDirection: "row", alignItems: "center", gap: 10,
-    backgroundColor: "#f5f5f4", borderRadius: 12, padding: 10,
-  },
-  logAvatar: {
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: COLORS.primaryLight, alignItems: "center", justifyContent: "center",
-  },
+  logRow: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#f5f5f4", borderRadius: 12, padding: 10 },
+  logAvatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.primaryLight, alignItems: "center", justifyContent: "center" },
   logAvatarText: { fontSize: 13, fontWeight: "800", color: COLORS.primary },
   logName: { fontSize: 13, fontWeight: "700", color: COLORS.textDark },
   logVoted: { fontSize: 12, color: COLORS.textMid },
@@ -342,16 +398,9 @@ const styles = StyleSheet.create({
   insightTitle: { fontSize: 15, fontWeight: "800", color: "#15803d", marginBottom: 8 },
   insightText: { fontSize: 13, color: "#166534", lineHeight: 20 },
   actionRow: { flexDirection: "row", gap: 10 },
-  btnPrimary: {
-    flex: 1, backgroundColor: COLORS.primary, borderRadius: 14,
-    paddingVertical: 14, alignItems: "center",
-  },
+  btnPrimary: { flex: 1, backgroundColor: COLORS.primary, borderRadius: 14, paddingVertical: 14, alignItems: "center" },
   btnPrimaryText: { color: COLORS.white, fontSize: 14, fontWeight: "700" },
-  btnSecondary: {
-    flex: 1, backgroundColor: "#f5f5f4", borderRadius: 14,
-    paddingVertical: 14, alignItems: "center",
-    borderWidth: 1, borderColor: COLORS.border,
-  },
+  btnSecondary: { flex: 1, backgroundColor: "#f5f5f4", borderRadius: 14, paddingVertical: 14, alignItems: "center", borderWidth: 1, borderColor: COLORS.border },
   btnSecondaryText: { color: COLORS.textDark, fontSize: 14, fontWeight: "700" },
   loadingText: { color: COLORS.textMid, marginTop: 12 },
   errorText: { color: COLORS.error, fontSize: 14, textAlign: "center", marginBottom: 16 },

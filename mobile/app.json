@@ -9,7 +9,9 @@
     "splash": {
       "backgroundColor": "#16a34a"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false
     },
@@ -18,6 +20,11 @@
         "backgroundColor": "#16a34a"
       },
       "package": "com.volunteerpoll.app"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "ba2e057e-912b-4dbe-8f45-4ad769b6dcc0"
+      }
     }
   }
 }

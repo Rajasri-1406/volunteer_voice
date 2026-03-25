@@ -1,40 +1,65 @@
-import axios from "axios";
 
 const BASE_URL = "https://volunteer-voice.onrender.com/api";
 
+// ─── Generic fetch helper ──────────────────────────────────────────────────
+async function request(path, options = {}) {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    headers: { "Content-Type": "application/json", ...options.headers },
+    ...options,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Something went wrong");
+  return data;
+}
 
-const api = axios.create({
-  baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
-  timeout: 15000,
-});
+// ─── Polls API ─────────────────────────────────────────────────────────────
 
-export const getAllPolls = async () => {
-  const res = await api.get("/polls");
-  return res.data;
-};
+/** Fetch all polls */
+export const getAllPolls = () => request("/polls");
 
-export const getPollById = async (id) => {
-  const res = await api.get(`/polls/${id}`);
-  return res.data;
-};
+/** Fetch polls by organizer email */
+export const getPollsByOrganizer = (email) =>
+  request(`/polls/organizer/${encodeURIComponent(email)}`);
 
-export const createPoll = async (pollData) => {
-  const res = await api.post("/polls", pollData);
-  return res.data;
-};
+/** Fetch single poll by ID */
+export const getPollById = (id) => request(`/polls/${id}`);
 
-export const submitVote = async (pollId, optionIndex, voterName) => {
-  const res = await api.post(`/polls/${pollId}/vote`, { optionIndex, voterName });
-  return res.data;
-};
+/** Create a new poll */
+export const createPoll = (pollData) =>
+  request("/polls", {
+    method: "POST",
+    body: JSON.stringify(pollData),
+  });
 
-export const closePoll = async (pollId) => {
-  const res = await api.patch(`/polls/${pollId}/close`);
-  return res.data;
-};
+/** Submit a vote */
+export const submitVote = (pollId, optionIndex, voterName) =>
+  request(`/polls/${pollId}/vote`, {
+    method: "POST",
+    body: JSON.stringify({ optionIndex, voterName }),
+  });
 
-export const deletePoll = async (pollId) => {
-  const res = await api.delete(`/polls/${pollId}`);
-  return res.data;
-};
+/** Close a poll */
+export const closePoll = (pollId) =>
+  request(`/polls/${pollId}/close`, { method: "PATCH" });
+
+/** Edit a poll (title, description, options — votes preserved) */
+export const editPoll = (pollId, updates) =>
+  request(`/polls/${pollId}/edit`, {
+    method: "PATCH",
+    body: JSON.stringify(updates),
+  });
+
+/** Duplicate a poll (votes reset to 0) */
+export const duplicatePoll = (pollId) =>
+  request(`/polls/${pollId}/duplicate`, { method: "POST" });
+
+/** Add a comment to a poll */
+export const addComment = (pollId, commenterName, text) =>
+  request(`/polls/${pollId}/comment`, {
+    method: "POST",
+    body: JSON.stringify({ commenterName, text }),
+  });
+
+/** Delete a poll */
+export const deletePoll = (pollId) =>
+  request(`/polls/${pollId}`, { method: "DELETE" });
